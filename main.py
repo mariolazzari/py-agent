@@ -34,37 +34,39 @@ def main():
         {"role": "user", "content": args.user_prompt},
     ]
 
-    response = client.chat.completions.create(
-        model="openrouter/free",
-        messages=messages,
-        tools=available_functions,
-    )
+    while True:
+        response = client.chat.completions.create(
+            model="openrouter/free",
+            messages=messages,
+            tools=available_functions,
+        )
 
-    if response.usage is None:
-        raise RuntimeError("The model response did not contain usage information.")
+        if args.verbose and response.usage is not None:
+            print(f"Prompt tokens: {response.usage.prompt_tokens}")
+            print(f"Response tokens: {response.usage.completion_tokens}")
 
-    if args.verbose:
-        print(f"User prompt: {args.user_prompt}")
-        print(f"Prompt tokens: {response.usage.prompt_tokens}")
-        print(f"Response tokens: {response.usage.completion_tokens}")
-        print()
+        message = response.choices[0].message
 
-    message = response.choices[0].message
+        if not message.tool_calls:
+            if message.content:
+                print(message.content)
+            break
 
-    if message.tool_calls:
+        messages.append(message.model_dump(exclude_none=True))
+
         for tool_call in message.tool_calls:
             result_message = call_function(
                 tool_call,
                 verbose=args.verbose,
             )
 
-            if not result_message["content"]:
+            if not result_message.get("content"):
                 raise Exception("Function call returned an empty result.")
 
             if args.verbose:
                 print(f"-> {result_message['content']}")
-    else:
-        print(message.content)
+
+            messages.append(result_message)
 
 
 if __name__ == "__main__":
