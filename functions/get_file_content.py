@@ -33,3 +33,22 @@ def get_file_content(working_directory: str, file_path: str) -> str:
 
     except (OSError, ValueError, UnicodeError) as e:
         return f"Error: {e}"
+
+
+schema_get_file_content = {
+    "type": "function",
+    "function": {
+        "name": "get_file_content",
+        "description": "Reads the contents of a file.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "The path to the file to read, relative to the working directory.",
+                },
+            },
+            "required": ["file_path"],
+        },
+    },
+}
